@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Client, Object, Estimate, WorkStage, Payment
+from .models import Client, Object, Estimate, WorkStage, Payment, Profile
 
 class EstimateInline(admin.TabularInline):
     model = Estimate
@@ -23,3 +23,4 @@ admin.site.register(Object, ObjectAdmin)
 admin.site.register(Estimate)
 admin.site.register(WorkStage)
 admin.site.register(Payment)
+admin.site.register(Profile)
