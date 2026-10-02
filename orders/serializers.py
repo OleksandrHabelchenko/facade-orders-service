@@ -30,3 +30,14 @@ class PaymentSerializer(serializers.ModelSerializer):
         model = Payment
         fields = '__all__'
 
+    def validate(self, data):
+        obj = data['object']
+        total_estimate = sum(e.total_amount for e in obj.estimates.all())
+        total_paid = sum(p.amount for p in obj.payments.all())
+        new_amount = data['amount']
+
+        if total_paid + new_amount > total_estimate:
+            raise serializers.ValidationError(
+                "Сумма оплаты превышает сумму сметы для данного объекта."
+                )
+        return data

@@ -2,6 +2,8 @@ from django.db import models
 
 from django.contrib.auth.models import User
 
+from django.utils import timezone
+
 class Client(models.Model):
     full_name = models.CharField(max_length=255)
     phone = models.CharField(max_length=20)
@@ -24,11 +26,21 @@ class Object(models.Model):
         ('other','Другое'),
     ]
 
+    STATUS_CHOICES = [
+        ('new', 'Новый'),
+        ('estimate', 'Смета готова'),
+        ('in_process', 'В работе'),
+        ('completed', 'Завершен'),
+        ('paid', 'Оплачен'),
+    ]
+
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='objects_list')
     address = models.CharField(max_length=255)
     work_type = models.CharField(max_length=20, choices=WORK_TYPE_CHOICES, default='facade')
     area_m2 = models.DecimalField(max_digits=8, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
     created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.address} ({self.client.full_name})"
@@ -62,6 +74,14 @@ class WorkStage(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES,default='not_started')
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        stages = self.object.stages.all()
+        if stages.exists() and all(s.status == 'done' for s in stages):
+            self.object.status = 'completed'
+            self.object.completed_at = timezone.now()
+            self.object.save()
 
     def __str__(self):
         return f"{self.name} - {self.get_status_display()} ({self.object})"

@@ -4,6 +4,8 @@ from .models import Client, Object, Estimate, WorkStage, Payment
 
 from .permissions import IsOwner, IsOwnerOrMasterReadOnly
 
+from django_filters.rest_framework import DjangoFilterBackend
+
 from .serializers import (
     ClientSerializer,
     ObjectSerializer,
@@ -21,6 +23,8 @@ class ObjectViewSet(viewsets.ModelViewSet):
     queryset = Object.objects.all()
     serializer_class = ObjectSerializer
     permission_classes = [IsOwnerOrMasterReadOnly]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['status', 'work_type', 'client']
 
 class EstimateViewSet(viewsets.ModelViewSet):
     queryset = Estimate.objects.all()
