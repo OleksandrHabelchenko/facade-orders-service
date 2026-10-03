@@ -72,10 +72,14 @@ class WorkStage(models.Model):
     object = models.ForeignKey(Object, on_delete=models.CASCADE, related_name='stages')
     name = models.CharField(max_length=255)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES,default='not_started')
-    start_date = models.DateField(null=True, blank=True)
-    end_date = models.DateField(null=True, blank=True)
+    start_date = models.DateTimeField(null=True, blank=True)
+    end_date = models.DateTimeField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
+        if self.status == 'in_process' and not self.start_date:
+            self.start_date = timezone.now()
+        if self.status == 'done' and not self.end_date:
+            self.end_date = timezone.now()
         super().save(*args, **kwargs)
         stages = self.object.stages.all()
         if stages.exists() and all(s.status == 'done' for s in stages):

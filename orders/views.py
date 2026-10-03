@@ -9,6 +9,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .serializers import (
     ClientSerializer,
     ObjectSerializer,
+    ObjectDetailSerializer,
     EstimateSerializer,
     WorkStageSerializer,
     PaymentSerializer,
@@ -25,6 +26,11 @@ class ObjectViewSet(viewsets.ModelViewSet):
     permission_classes = [IsOwnerOrMasterReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['status', 'work_type', 'client']
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return ObjectDetailSerializer
+        return ObjectSerializer
 
 class EstimateViewSet(viewsets.ModelViewSet):
     queryset = Estimate.objects.all()

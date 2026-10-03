@@ -41,3 +41,12 @@ class PaymentSerializer(serializers.ModelSerializer):
                 "Сумма оплаты превышает сумму сметы для данного объекта."
                 )
         return data
+
+class ObjectDetailSerializer(serializers.ModelSerializer):
+    estimates = EstimateSerializer(many=True, read_only=True)
+    stages = WorkStageSerializer(many=True, read_only=True)
+    payments = PaymentSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Object
+        fields = '__all__'
