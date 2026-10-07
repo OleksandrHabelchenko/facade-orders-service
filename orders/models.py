@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 
 from django.utils import timezone
 
+from django.core.exceptions import ValidationError
+
 class Client(models.Model):
     full_name = models.CharField(max_length=255)
     phone = models.CharField(max_length=20)
@@ -62,11 +64,21 @@ class Estimate(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
-    def save(self, *args, **kwargs):
+    def clean(self):
         if self.object.unit == 'm2':
-            self.total_amount = self.price_per_m2 * (self.object.area_m2)
+            if not self.object.area_m2 or not self.price_per_m2:
+                raise ValidationError("Площадь в м² или цена за м² не указана для объекта.")
         elif self.object.unit == 'm_p':
-            self.total_amount = self.price_per_m_p * (self.object.area_m_p)
+            if not self.object.area_m_p or not self.price_per_m_p:
+                raise ValidationError("Площадь в п.м. или цена за п.м. не указана для объекта.")
+
+
+    def save(self, *args, **kwargs):
+        self.full_clean()  # Вызываем clean() перед сохранением
+        if self.object.unit == 'm2':
+            self.total_amount = self.price_per_m2 * self.object.area_m2
+        elif self.object.unit == 'm_p':
+            self.total_amount = self.price_per_m_p * self.object.area_m_p
         super().save(*args, **kwargs)
         if self.object.status == 'new':
             self.object.status = 'estimate'
