@@ -34,10 +34,17 @@ class Object(models.Model):
         ('paid', 'Оплачен'),
     ]
 
+    UNIT_CHOICES = [
+        ('m2', 'м²'),
+        ('m_p', 'п.м.'),
+    ]
+
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='objects_list')
     address = models.CharField(max_length=255)
     work_type = models.CharField(max_length=20, choices=WORK_TYPE_CHOICES, default='facade')
-    area_m2 = models.DecimalField(max_digits=8, decimal_places=2)
+    unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default='m2')
+    area_m2 = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    area_m_p = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
     created_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
@@ -49,14 +56,21 @@ class Object(models.Model):
 class Estimate(models.Model):
     object = models.ForeignKey(Object, on_delete=models.CASCADE, related_name='estimates')
     material_name = models.CharField(max_length=255)
-    price_per_m2 = models.DecimalField(max_digits=8, decimal_places=2)
+    price_per_m2 = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    price_per_m_p = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
 
     def save(self, *args, **kwargs):
-        self.total_amount = self.object.area_m2 * self.price_per_m2
+        if self.object.unit == 'm2':
+            self.total_amount = self.price_per_m2 * (self.object.area_m2)
+        elif self.object.unit == 'm_p':
+            self.total_amount = self.price_per_m_p * (self.object.area_m_p)
         super().save(*args, **kwargs)
+        if self.object.status == 'new':
+            self.object.status = 'estimate'
+            self.object.save()
 
     def __str__(self):
         return f"Смета для {self.object} = {self.total_amount}"
