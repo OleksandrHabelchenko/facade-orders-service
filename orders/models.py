@@ -101,7 +101,15 @@ class WorkStage(models.Model):
     start_date = models.DateTimeField(null=True, blank=True)
     end_date = models.DateTimeField(null=True, blank=True)
 
+    def clean(self):
+        duplicate = WorkStage.objects.filter(
+            object=self.object, name__iexact=self.name
+        ).exclude(pk=self.pk).exists()
+        if duplicate:
+            raise ValidationError(f"Этап с именем '{self.name}' уже существует для данного объекта.")
+
     def save(self, *args, **kwargs):
+        self.full_clean()
         if self.status == 'in_process' and not self.start_date:
             self.start_date = timezone.now()
         if self.status == 'done' and not self.end_date:
